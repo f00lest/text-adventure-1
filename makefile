@@ -3,3 +3,6 @@ all: compile
 
 compile:
 	g++ -Wall -ggdb -O0 -c main.cpp
+
+curses:
+	g++ -o curses -lncurses curses.cpp
