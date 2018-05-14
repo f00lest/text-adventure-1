@@ -10,10 +10,15 @@ enum en_DIRS {NORTH, EAST, SOUTH, WEST};
 // integers to room names mapping.
 // both the sportshop and the north are zero, its our understanding that matters.
 enum en_ROOMS {SPORTSHOP, CASINO, CARPARK, LOBBY, RESTAURANT, CORRIDOR, STOREROOM, POOL, GARDEN, POND, PUMPROOM}; const int NONE = -1;
+// verbs
+enum en_VERBS {GET, DROP, USE, OPEN, CLOSE, EXAMINE, INVENTORY, LOOK};
+enum en_NOUNS {STORE_DOOR, MAGNET, METER, ROULETTE, MONEY, FISHROD};
+const int NOUNS = 6;
 // there are 4 directions and 11 rooms, these constants will be used to create dirctions
 // and rooms arrays.
 const int DIRS = 4;
 const int ROOMS = 11;
+const int VERBS = 8;
 
 // This struct will add a name string to the direction numbers we will be using.
 struct word
@@ -21,6 +26,7 @@ struct word
     string word;
     int code;
 };
+
 
 // will hold the name of room and all possible exits.
 struct room
@@ -38,7 +44,9 @@ struct room
 void section_command(string Cmd, string &wd1, string &wd2);
 void set_rooms(room *rms);
 void set_directions(word *dir);
-bool parser(int &loc, string wd1, string wd2, word *dir, room *rms);
+void set_verbs(word *vbs);
+bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms);
+void look_around(int loc, room *rms, word *dir);
 
 
 int main()
@@ -47,10 +55,14 @@ int main()
     string word_1;
     string word_2;
 
+    // set rooms, directions, verbs, nouns.
     room rooms[ROOMS];
     set_rooms(rooms);
     word directions[DIRS];
     set_directions(directions);
+    word verbs[VERBS];
+    set_verbs(verbs);
+
     int location = CARPARK; // using the enumerated type identifier, of course.
 
     
@@ -65,7 +77,7 @@ int main()
 
         // Call the function that handles the command line fromat.
         section_command(command, word_1, word_2); 
-        parser(location, word_1, word_2, directions, rooms);
+        parser(location, word_1, word_2, directions, verbs, rooms);
         cout << word_1 << " " << word_2 << endl; // For test purposes, output the command after formatting by the function.
     }    
 
@@ -103,6 +115,8 @@ void section_command(string Cmd, string &wd1, string &wd2)
 
     // Clear out any blanks
     // I work backwords through the vectors here as a cheat not to invalidate
+    // moving in the reverse direction prevents change of index of next elements that will
+    // be evaluated.
     for(i = words.size() - 1; i > 0; i--)
     {
         if (words.at(i) == "")
@@ -113,8 +127,10 @@ void section_command(string Cmd, string &wd1, string &wd2)
 
     // Make words upper case
     // Right here is where the functions from cctype are used
+    // iterate on words
     for(i = 0; i < words.size(); i++)
     {
+        // iterate on letters of the words
         for(j = 0; j < words.at(i).size(); j++)
         {
             if(islower(words.at(i).at(j)))
@@ -229,9 +245,32 @@ void set_directions(word *dir)
 }
 
 
-bool parser(int &loc, string wd1, string wd2, word *dir, room *rms)
+// Function to set the verbs...
+void set_verbs(word *vbs)
+{
+    // Reminder GET, DROP, USE, OPEN, CLOSE, EXAMINE, INVENTORY, LOOK
+    vbs[GET].code = GET;
+    vbs[GET].word = "GET";
+    vbs[DROP].code = DROP;
+    vbs[DROP].word = "DROP";
+    vbs[USE].code = USE;
+    vbs[USE].word = "USE";
+    vbs[OPEN].code = OPEN;
+    vbs[OPEN].word = "OPEN";
+    vbs[CLOSE].code = CLOSE;
+    vbs[CLOSE].word = "CLOSE";
+    vbs[EXAMINE].code = EXAMINE;
+    vbs[EXAMINE].word = "EXAMINE";
+    vbs[INVENTORY].code = INVENTORY;
+    vbs[INVENTORY].word = "INVENTORY";
+    vbs[LOOK].code = LOOK;
+    vbs[LOOK].word = "LOOK";
+}
+
+bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms)
 {
     int i;
+    int VERB_ACTION = NONE;
 
     // Iterate on direction names
     for(i = 0; i < DIRS; i++)
@@ -255,6 +294,58 @@ bool parser(int &loc, string wd1, string wd2, word *dir, room *rms)
             }
         }
     }
+
+    // iterates over verbs, converts user entered verb string
+    // to an enum / int value.
+    for(i = 0; i < VERBS; ++i)
+    {
+        if(wd1 == vbs[i].word)
+        {
+            // if found verb, get its code save it to a local variable and 
+            // break for next tasks.
+            VERB_ACTION = vbs[i].code;
+            break;
+        }
+    }
+
+    // if the verb is not found amongst our list
+    if(VERB_ACTION == NONE)
+    {
+        // warn user
+        cout << "No valid command entered." << endl;
+        return true;
+    }
+    // if it was look
+    if(VERB_ACTION == LOOK)
+    {
+        // call a nice little function. Of course we need current location along with rooms and
+        // directions to look up for that room in rms and then get all possible exits in a
+        // ll possible directions and then print them out for the user.
+        // This is an example of sub proceduralizing a function from the parser.
+        look_around(loc, rms, dir);
+        return true;
+    }
+
     cout << "No valid command entered." << endl;
     return false;
+}
+
+// prints out all exits in all directions from the current location.
+void look_around(int loc, room *rms, word *dir)
+{
+    int i;
+    // print current room name.
+    cout << "I am in a " << rms[loc].description << endl;
+
+    // LOOK should also allow the player to see what exits exist from the current room.
+    // look in all direcctions
+    for(i = 0; i < DIRS; i++)
+    {
+        // if an exit exits in that direction
+        if(rms[loc].exits_to_room[i] != NONE)
+        {
+            // print out the details of that exit.
+            cout << "There is an exit " << dir[i].word << " to a " << rms[rms[loc].exits_to_room[i]].description << "." << endl;
+        }
+    }
 }
