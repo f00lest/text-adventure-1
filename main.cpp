@@ -27,6 +27,16 @@ struct word
     int code;
 };
 
+// will represent objects like door, magnet, etc.., they should have a name, description, 
+// and location, etc.., so we can track them.
+struct noun
+{
+    string word;
+    string description;
+    int code;
+    int location;
+    bool can_carry;
+};
 
 // will hold the name of room and all possible exits.
 struct room
@@ -45,8 +55,9 @@ void section_command(string Cmd, string &wd1, string &wd2);
 void set_rooms(room *rms);
 void set_directions(word *dir);
 void set_verbs(word *vbs);
-bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms);
-void look_around(int loc, room *rms, word *dir);
+void set_nouns(noun *nns);
+bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, noun *nns);
+void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state);
 
 
 int main()
@@ -62,6 +73,9 @@ int main()
     set_directions(directions);
     word verbs[VERBS];
     set_verbs(verbs);
+    noun nouns[NOUNS];
+    set_nouns(nouns);
+
 
     int location = CARPARK; // using the enumerated type identifier, of course.
 
@@ -77,7 +91,11 @@ int main()
 
         // Call the function that handles the command line fromat.
         section_command(command, word_1, word_2); 
-        parser(location, word_1, word_2, directions, verbs, rooms);
+
+        if(word_1 != "QUIT")
+        {
+            parser(location, word_1, word_2, directions, verbs, rooms, nouns);
+        }
         cout << word_1 << " " << word_2 << endl; // For test purposes, output the command after formatting by the function.
     }    
 
@@ -196,7 +214,7 @@ void set_rooms(room *rms)
  
     rms[CORRIDOR].description.assign("corridor");
     rms[CORRIDOR].exits_to_room[NORTH] = LOBBY;
-    rms[CORRIDOR].exits_to_room[EAST] = STOREROOM;
+    //rms[CORRIDOR].exits_to_room[EAST] = STOREROOM;
     rms[CORRIDOR].exits_to_room[SOUTH] = GARDEN;
     rms[CORRIDOR].exits_to_room[WEST] = NONE;
  
@@ -204,7 +222,7 @@ void set_rooms(room *rms)
     rms[STOREROOM].exits_to_room[NORTH] = NONE;
     rms[STOREROOM].exits_to_room[EAST] = NONE;
     rms[STOREROOM].exits_to_room[SOUTH] = NONE;
-    rms[STOREROOM].exits_to_room[WEST] = CORRIDOR;
+    //rms[STOREROOM].exits_to_room[WEST] = CORRIDOR;
  
     rms[POOL].description.assign("swimming pool area");
     rms[POOL].exits_to_room[NORTH] = NONE;
@@ -267,10 +285,47 @@ void set_verbs(word *vbs)
     vbs[LOOK].word = "LOOK";
 }
 
-bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms)
+void set_nouns(noun *nns)
+{
+        //enum en_NOUNS {STORE_DOOR, MAGNET, METER, ROULETTE, MONEY, FISHROD};
+    nns[STORE_DOOR].word = "DOOR";
+    nns[STORE_DOOR].code = STORE_DOOR;
+    nns[STORE_DOOR].description = "a closed store room door";
+    nns[STORE_DOOR].can_carry = false;
+    nns[STORE_DOOR].location = CORRIDOR;
+    nns[MAGNET].word = "MAGNET";
+    nns[MAGNET].code = MAGNET;
+    nns[MAGNET].description = "a magnet";
+    nns[MAGNET].can_carry = true;
+    nns[MAGNET].location = NONE;
+    nns[METER].word = "METER";
+    nns[METER].code = METER;
+    nns[METER].description = "a parking meter";
+    nns[METER].can_carry = false;
+    nns[METER].location = CARPARK;
+    nns[ROULETTE].word = "ROULETTE";
+    nns[ROULETTE].code = ROULETTE;
+    nns[ROULETTE].description = "a roulette wheel";
+    nns[ROULETTE].can_carry = false;
+    nns[ROULETTE].location = CASINO;
+    nns[MONEY].word = "MONEY";
+    nns[MONEY].code = MONEY;
+    nns[MONEY].description = "some money";
+    nns[MONEY].can_carry = true;
+    nns[MONEY].location = NONE;
+    nns[FISHROD].word = "ROD";
+    nns[FISHROD].code = FISHROD;
+    nns[FISHROD].description = "a fishing rod";
+    nns[FISHROD].can_carry = false;
+    nns[FISHROD].location = SPORTSHOP;
+}
+
+bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, noun *nns)
 {
     int i;
     int VERB_ACTION = NONE;
+    int NOUN_MATCH = NONE;
+    static bool door_state = false;
 
     // Iterate on direction names
     for(i = 0; i < DIRS; i++)
@@ -300,11 +355,23 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms)
     for(i = 0; i < VERBS; ++i)
     {
         if(wd1 == vbs[i].word)
-        {
+        {            
             // if found verb, get its code save it to a local variable and 
             // break for next tasks.
-            VERB_ACTION = vbs[i].code;
+            VERB_ACTION = vbs[i].code;            
             break;
+        }
+    }
+
+    if(wd2 != "")
+    {
+        for(i = 0; i < NOUNS; i++)
+        {
+            if(wd2 == nns[i].word)
+            {
+                NOUN_MATCH = nns[i].code;
+                break;
+            }
         }
     }
 
@@ -322,16 +389,79 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms)
         // directions to look up for that room in rms and then get all possible exits in a
         // ll possible directions and then print them out for the user.
         // This is an example of sub proceduralizing a function from the parser.
-        look_around(loc, rms, dir);
+        look_around(loc, rms, dir, nns, door_state);
         return true;
     }
+    if(VERB_ACTION == OPEN)
+    {
+        if(NOUN_MATCH == STORE_DOOR)
+        {
+            if(loc == CORRIDOR || loc == STOREROOM)
+            {
+                if (door_state == false)
+                {
+                    door_state = true;
+                    rms[CORRIDOR].exits_to_room[EAST] = STOREROOM;
+                    rms[STOREROOM].exits_to_room[WEST] = CORRIDOR;
+                    cout << "I have opened the door." << endl;
+                    return true;
+                }
+                else if(door_state == true)
+                {
+                    cout << "The door is already open." << endl;
+                    return true;
+                }
+            }
+            else 
+            {
+                cout << "There is no door to open here." << endl;
+            }
+        }
+        else
+        {
+            cout << "Opening that is not possible." << endl;
+        }
+    }
 
-    cout << "No valid command entered." << endl;
+    if(VERB_ACTION == CLOSE)
+    {
+        if(NOUN_MATCH == STORE_DOOR)
+        {
+            if(loc == CORRIDOR || loc == STOREROOM)
+            {
+                if (door_state == true)
+                {
+                    door_state = false;
+                    rms[CORRIDOR].exits_to_room[EAST] = NONE;
+                    rms[STOREROOM].exits_to_room[WEST] = NONE;
+                    return true;
+                }
+                else if(door_state == false)
+                {
+                    cout << "The door is already closed." << endl;
+                    return true;
+                }
+            }
+            else
+            {
+                cout << "There is no door to close here." << endl;
+                return true;
+            }
+        }
+        else
+        {
+            cout << "Closing that is not possible." << endl;
+            return true;
+        }
+    }
+
+    // we've run out of implemented verbs and directions.
+    cout << "No valid command entered.!!" << endl;
     return false;
 }
 
 // prints out all exits in all directions from the current location.
-void look_around(int loc, room *rms, word *dir)
+void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state)
 {
     int i;
     // print current room name.
@@ -346,6 +476,25 @@ void look_around(int loc, room *rms, word *dir)
         {
             // print out the details of that exit.
             cout << "There is an exit " << dir[i].word << " to a " << rms[rms[loc].exits_to_room[i]].description << "." << endl;
+        }
+    }
+    for(i = 0; i < NOUNS; i++)
+    {
+        if(nns[i].location == loc)
+        {
+            cout << "I see" << nns[i].description << "." << endl;
+        }
+    }
+
+    if(loc == CORRIDOR || loc == STOREROOM)
+    {
+        if(door_state == false)
+        {
+            cout << "The door is closed." << endl;
+        }
+        else
+        {
+            cout << "The door is open" << endl;
         }
     }
 }
