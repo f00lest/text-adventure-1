@@ -2,6 +2,7 @@
 #include <string>
 #include <vector> // For the command handling function.
 #include <cctype> // Will be used to eliminate case sensitive problems.
+#include <algorithm>
 
 using namespace std;
 
@@ -338,7 +339,7 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
             if(rms[loc].exits_to_room[dir[i].code] != NONE)
             {
                 loc = rms[loc].exits_to_room[dir[i].code];
-                cout << "I am now in a " << rms[loc].description << "," << endl;
+                cout << "I am now in a " << rms[loc].description << endl;
                 return true;
             }
             // if there is no exit that way it fails with a message.
@@ -403,6 +404,8 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
                     door_state = true;
                     rms[CORRIDOR].exits_to_room[EAST] = STOREROOM;
                     rms[STOREROOM].exits_to_room[WEST] = CORRIDOR;
+                    nns[STORE_DOOR].description.clear();
+                    nns[STORE_DOOR].description.assign("an open store room door");
                     cout << "I have opened the door." << endl;
                     return true;
                 }
@@ -434,6 +437,8 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
                     door_state = false;
                     rms[CORRIDOR].exits_to_room[EAST] = NONE;
                     rms[STOREROOM].exits_to_room[WEST] = NONE;
+                    nns[STORE_DOOR].description.clear();
+                    nns[STORE_DOOR].description.assign("a closed store room door");
                     return true;
                 }
                 else if(door_state == false)
@@ -482,7 +487,7 @@ void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state)
     {
         if(nns[i].location == loc)
         {
-            cout << "I see" << nns[i].description << "." << endl;
+            cout << "I see " << nns[i].description << "." << endl;
         }
     }
 
