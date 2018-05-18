@@ -3,6 +3,7 @@
 #include <vector> // For the command handling function.
 #include <cctype> // Will be used to eliminate case sensitive problems.
 #include <algorithm>
+#include <cassert>
 
 using namespace std;
 
@@ -42,6 +43,12 @@ struct noun
 // will hold the name of room and all possible exits.
 struct room
 {
+    // constructor
+    room()
+    {
+        // fill in directions with NONE initially
+        std::fill(this->exits_to_room, this->exits_to_room + DIRS, NONE);
+    }
     // description is simply the name of the room.
     string description;
     // each exit will be and denoted by an index, we do not need to remember those indeces
@@ -213,14 +220,16 @@ void set_rooms(room *rms)
  
     rms[CORRIDOR].description.assign("corridor");
     rms[CORRIDOR].exits_to_room[NORTH] = LOBBY;
+    rms[CORRIDOR].exits_to_room[EAST] = NONE;
     //rms[CORRIDOR].exits_to_room[EAST] = STOREROOM;
     rms[CORRIDOR].exits_to_room[SOUTH] = GARDEN;
     rms[CORRIDOR].exits_to_room[WEST] = NONE;
- 
+
     rms[STOREROOM].description.assign("store room");
     rms[STOREROOM].exits_to_room[NORTH] = NONE;
     rms[STOREROOM].exits_to_room[EAST] = NONE;
     rms[STOREROOM].exits_to_room[SOUTH] = NONE;
+    rms[STOREROOM].exits_to_room[WEST] = NONE;
     //rms[STOREROOM].exits_to_room[WEST] = CORRIDOR;
  
     rms[POOL].description.assign("swimming pool area");
@@ -326,6 +335,8 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
     int NOUN_MATCH = NONE;
     static bool door_state = false;
 
+    // Give me some space every time we try to parse.
+    cout << endl;
     // Iterate on direction names
     for(i = 0; i < DIRS; i++)
     {
