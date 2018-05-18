@@ -86,7 +86,6 @@ int main()
         command.clear();
         cout << "What shall I do? ";        
         getline(cin, command);        
-        cout << "Your raw command was " << command << endl;        
         word_1.clear();
         word_2.clear();
 
@@ -97,7 +96,6 @@ int main()
         {
             parser(location, word_1, word_2, directions, verbs, rooms, nouns);
         }
-        cout << word_1 << " " << word_2 << endl; // For test purposes, output the command after formatting by the function.
     }    
 
     return 0;
@@ -488,18 +486,6 @@ void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state)
         if(nns[i].location == loc)
         {
             cout << "I see " << nns[i].description << "." << endl;
-        }
-    }
-
-    if(loc == CORRIDOR || loc == STOREROOM)
-    {
-        if(door_state == false)
-        {
-            cout << "The door is closed." << endl;
-        }
-        else
-        {
-            cout << "The door is open" << endl;
         }
     }
 }
