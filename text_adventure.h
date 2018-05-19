@@ -66,6 +66,5 @@ void set_verbs(word *vbs);
 void set_nouns(noun *nns);
 bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, noun *nns);
 void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state);
-
-
-
+/** prints introduction story **/
+void print_intro();

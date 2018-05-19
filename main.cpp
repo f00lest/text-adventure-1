@@ -16,6 +16,8 @@ int main()
     noun nouns[NOUNS];
     set_nouns(nouns);
 
+    print_intro();
+
 
     int location = CARPARK; // using the enumerated type identifier, of course.
 
@@ -23,7 +25,8 @@ int main()
     while (word_1 != "QUIT") // I have provided an escape condition from the loop here
     {        
         command.clear();
-        cout << "What shall I do? ";        
+        cout << endl;
+        cout << "> ";        
         getline(cin, command);        
         word_1.clear();
         word_2.clear();
@@ -267,9 +270,7 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
     int NOUN_MATCH = NONE;
     static bool door_state = false;
 
-    // Give me some space every time we try to parse.
-    cout << endl;
-    // Iterate on direction names
+   // Iterate on direction names
     for(i = 0; i < DIRS; i++)
     {
         // check if they match the input direction of user.
@@ -403,6 +404,7 @@ bool parser(int &loc, string wd1, string wd2, word *dir, word *vbs, room *rms, n
 
     // we've run out of implemented verbs and directions.
     cout << "No valid command entered.!!" << endl;
+
     return false;
 }
 
@@ -431,4 +433,10 @@ void look_around(int loc, room *rms, word *dir, noun *nns, bool door_state)
             cout << "I see " << nns[i].description << "." << endl;
         }
     }
+}
+
+void print_intro()
+{
+    cout << "We'll print an introduction here." << endl;
+    return;
 }
